@@ -1,0 +1,10 @@
+// Default TimeTracker commands.
+// You can create your own custom commands by copying this file and putting it in your
+// User directory (next to your "Settings - User" settings file).
+// Note, though, that this file will override the default sublime-settings file!
+[
+    { "caption": "TimeTracker: Add trackcmd", "command": "timetracker_add_trackcmd" },
+    { "caption": "TimeTracker: Start activity", "command": "timetracker_start_activity" },
+    { "caption": "TimeTracker: Stop activity", "command": "timetracker_stop_activity" },
+    { "caption": "TimeTracker: Open log", "command": "timetracker_open_log" }
+]

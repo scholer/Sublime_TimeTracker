@@ -1,0 +1,5 @@
+// TimeTracker default settings.
+{
+    "timetracker_filename": "~/Sublime_timetracker.txt",
+    "timetracker_datetimefmt": "%Y-%m-%d %H.%M"
+}
