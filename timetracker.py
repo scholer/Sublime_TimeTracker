@@ -15,7 +15,7 @@
 ##    You should have received a copy of the GNU General Public License
 ##
 
-# pylint: disable=C0103
+# pylint: disable=C0103,W0201,W0221,R0201
 
 """
 
@@ -46,7 +46,7 @@ def get_settings():
     """ Get TimeTracker settings. """
     return sublime.load_settings(SETTINGS_NAME)
 
-def get_setting(key, setting=None, settings=None):
+def get_setting(key, settings=None):
     """
     Specify the settings will basically just do settings.get(key)
     """
@@ -85,10 +85,12 @@ def add_trackcmd(trackcmd, timestamp=None, filename=None):
     return append_line(line, filename, add_newline=True)
 
 def start_activity(activity):
+    """ Shortcut to add a "start <activity>" entry. """
     trackcmd = "start " + activity.strip()
     return add_trackcmd(trackcmd)
 
 def stop_activity(activity):
+    """ Shortcut to add a "stop <activity>" entry. """
     trackcmd = "stop " + activity.strip()
     return add_trackcmd(trackcmd)
 
@@ -104,6 +106,7 @@ class TimetrackerAddTrackcmd(sublime_plugin.WindowCommand):
         self.window.show_input_panel('Track cmd:', trackcmd or '', self.on_done, None, None)
 
     def on_done(self, trackcmd):
+        """ Receives input trackcmd as str. """
         if not trackcmd:
             msg = "Track cmd is empty."
         else:
@@ -126,6 +129,7 @@ class TimetrackerStartActivity(sublime_plugin.WindowCommand):
         self.window.show_input_panel('Start activity:', activity or '', self.on_done, None, None)
 
     def on_done(self, activity):
+        """ Receives input activity (label) as str. """
         if not activity:
             msg = "Activity is empty."
         else:
@@ -148,6 +152,7 @@ class TimetrackerStopActivity(sublime_plugin.WindowCommand):
         self.window.show_input_panel('Stop activity:', activity or '', self.on_done, None, None)
 
     def on_done(self, activity):
+        """ Receives input activity (label) as str. """
         if not activity:
             msg = "Activity is empty."
         else:
@@ -165,10 +170,35 @@ class TimetrackerOpenLog(sublime_plugin.WindowCommand):
     Set AutoRemote key.
     Command string: timetracker_open_log (WindowCommand)
     """
-    def run(self, activity=None):
+    def run(self, logname=None):
         # show_input_panel(caption, initial_text, on_done, on_change, on_cancel)
-        filename = get_setting("timetracker_filename")
+        if logname is None:
+            filename = get_setting("timetracker_filename")
+        else:
+            filename = get_setting("timetracker_all_logs").get(logname)
+        #self.window.run_command('open_file', {"file": filename})
+        # doesn't work, sublime don't recognize absolute windows paths.
+        self.window.open_file(filename)
+
+class TimetrackerSelectOpenLog(sublime_plugin.WindowCommand):
+    """
+    Set AutoRemote key.
+    Command string: timetracker_select_open_log (WindowCommand)
+    """
+    def run(self):
+        # show_input_panel(caption, initial_text, on_done, on_change, on_cancel)
+        #if logname is None:
+        #    filename = get_setting("timetracker_filename")
+        #else:
+        #    filename = get_setting("timetracker_all_logs").get(logname)
+        self.logs = get_setting("timetracker_all_logs")
+        self.lognames = sorted(self.logs.keys())
+        self.window.show_quick_panel(self.lognames, self.on_done)
+
+    def on_done(self, index):
+        """ Receives selected index for lognames list. """
         #print(filename)
         #self.window.run_command('open_file', {"file": filename})
         # doesn't work, sublime don't recognize absolute windows paths.
+        filename = self.logs[self.lognames[index]]
         self.window.open_file(filename)

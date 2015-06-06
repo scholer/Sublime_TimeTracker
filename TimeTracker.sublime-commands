@@ -6,5 +6,6 @@
     { "caption": "TimeTracker: Add trackcmd", "command": "timetracker_add_trackcmd" },
     { "caption": "TimeTracker: Start activity", "command": "timetracker_start_activity" },
     { "caption": "TimeTracker: Stop activity", "command": "timetracker_stop_activity" },
-    { "caption": "TimeTracker: Open log", "command": "timetracker_open_log" }
+    { "caption": "TimeTracker: Open default log", "command": "timetracker_open_log" },
+    { "caption": "TimeTracker: Open log (quick panel)", "command": "timetracker_select_open_log" }
 ]
