@@ -46,13 +46,13 @@ def get_settings():
     """ Get TimeTracker settings. """
     return sublime.load_settings(SETTINGS_NAME)
 
-def get_setting(key, settings=None):
+def get_setting(key, default=None, settings=None):
     """
     Specify the settings will basically just do settings.get(key)
     """
     if settings is None:
         settings = sublime.load_settings(SETTINGS_NAME)
-    return settings.get(key)
+    return settings.get(key, default)
 
 def persist_setting(key, value):
     """ Persist a settings key and value in TimeTracker settings. """
@@ -87,10 +87,19 @@ def add_trackcmd(trackcmd, timestamp=None, filename=None):
 def start_activity(activity):
     """ Shortcut to add a "start <activity>" entry. """
     trackcmd = "start " + activity.strip()
+    recently_started = get_setting("timetracker_recently_started", [])
+    recently_started.append(activity.strip())
+    persist_setting("timetracker_recently_started", recently_started)
     return add_trackcmd(trackcmd)
 
 def stop_activity(activity):
     """ Shortcut to add a "stop <activity>" entry. """
+    if activity == -1:
+        recently_started = get_setting("timetracker_recently_started", [])
+        activity = recently_started[-1]
+    recently_stopped = get_setting("timetracker_recently_stopped", [])
+    recently_stopped.append(activity.strip())
+    persist_setting("timetracker_recently_stopped", recently_stopped)
     trackcmd = "stop " + activity.strip()
     return add_trackcmd(trackcmd)
 
@@ -126,6 +135,12 @@ class TimetrackerStartActivity(sublime_plugin.WindowCommand):
     """
     def run(self, activity=None):
         # show_input_panel(caption, initial_text, on_done, on_change, on_cancel)
+        if activity is None:
+            recently_started = get_setting("timetracker_recently_started", [])
+            try:
+                activity = recently_started[-1]
+            except IndexError:
+                pass
         self.window.show_input_panel('Start activity:', activity or '', self.on_done, None, None)
 
     def on_done(self, activity):
@@ -149,6 +164,12 @@ class TimetrackerStopActivity(sublime_plugin.WindowCommand):
     """
     def run(self, activity=None):
         # show_input_panel(caption, initial_text, on_done, on_change, on_cancel)
+        if activity is None:
+            recently_started = get_setting("timetracker_recently_started", [])
+            try:
+                activity = recently_started[-1]
+            except IndexError:
+                pass
         self.window.show_input_panel('Stop activity:', activity or '', self.on_done, None, None)
 
     def on_done(self, activity):
