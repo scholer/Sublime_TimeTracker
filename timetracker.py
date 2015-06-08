@@ -137,9 +137,10 @@ class TimetrackerStartActivity(sublime_plugin.WindowCommand):
         # show_input_panel(caption, initial_text, on_done, on_change, on_cancel)
         if activity is None:
             recently_started = get_setting("timetracker_recently_started", [])
+            recently_started = [item.split(",")[0].strip() for item in recently_started]
             try:
                 activity = recently_started[-1]
-            except IndexError:
+            except ValueError:
                 pass
         self.window.show_input_panel('Start activity:', activity or '', self.on_done, None, None)
 
@@ -148,8 +149,8 @@ class TimetrackerStartActivity(sublime_plugin.WindowCommand):
         if not activity:
             msg = "Activity is empty."
         else:
-            nchars, filename = start_activity(activity)
             try:
+                nchars, filename = start_activity(activity)
                 msg = "%s chars written to file %s" % (nchars, filename)
             except (FileNotFoundError, IOError) as e:
                 msg = "Failed to append entry to file. %s: %s" % (type(e), e)
@@ -166,9 +167,10 @@ class TimetrackerStopActivity(sublime_plugin.WindowCommand):
         # show_input_panel(caption, initial_text, on_done, on_change, on_cancel)
         if activity is None:
             recently_started = get_setting("timetracker_recently_started", [])
+            recently_started = [item.split(",")[0].split("#")[0].strip() for item in recently_started]
             try:
                 activity = recently_started[-1]
-            except IndexError:
+            except ValueError:
                 pass
         self.window.show_input_panel('Stop activity:', activity or '', self.on_done, None, None)
 
@@ -177,11 +179,74 @@ class TimetrackerStopActivity(sublime_plugin.WindowCommand):
         if not activity:
             msg = "Activity is empty."
         else:
-            nchars, filename = stop_activity(activity)
             try:
+                nchars, filename = stop_activity(activity)
                 msg = "%s chars written to file %s" % (nchars, filename)
             except (FileNotFoundError, IOError) as e:
                 msg = "Failed to append entry to file. %s: %s" % (type(e), e)
+        print(msg)
+        sublime.status_message(msg)
+
+
+class TimetrackerStartActivityQuickpanel(sublime_plugin.WindowCommand):
+    """
+    Set AutoRemote key.
+    Command string: timetracker_start_activity_quickpanel (WindowCommand)
+    """
+    def run(self, activity=None):
+        # show_input_panel(caption, initial_text, on_done, on_change, on_cancel)
+        recently_started = get_setting("timetracker_recently_started", [])
+        if not recently_started:
+            msg = "List of recently started activities is empty; Use manual input first."
+            print(msg)
+            sublime.status_message(msg)
+            return
+        if activity is None or activity == -1:
+            activity = recently_started[-1]
+        recent_cleaned = [item.split(",")[0].split("#")[0].strip() for item in recently_started]
+        self.activities = sorted(set(recent_cleaned))
+        selected_index = self.activities.index(recent_cleaned[-1])
+        self.window.show_quick_panel(self.activities, self.on_selected, selected_index=selected_index)
+
+    def on_selected(self, index):
+        """ Receives input activity (label) as str. """
+        if index == -1:
+            print("Quick panel cancelled")
+            return
+        self.activity = self.activities[index]
+        self.window.show_input_panel('Comment:', '', self.on_done, None, None)
+
+    def on_done(self, comment):
+        """ Write activity + comment. """
+        if comment:
+            self.activity = self.activity + ", " + comment
+        try:
+            nchars, filename = start_activity(self.activity)
+            msg = "%s chars written to file %s" % (nchars, filename)
+        except (FileNotFoundError, IOError) as e:
+            msg = "Failed to append entry to file. %s: %s" % (type(e), e)
+        print(msg)
+        sublime.status_message(msg)
+
+
+
+class TimetrackerStopActivityQuickpanel(TimetrackerStartActivityQuickpanel):
+    """
+    Set AutoRemote key.
+    Command string: timetracker_stop_activity_quickpanel (WindowCommand)
+    Inherits from TimetrackerStartActivityQuickpanel
+    """
+    def on_selected(self, index):
+        """ Receives input activity (label) as str. """
+        if index == -1:
+            print("Quick panel cancelled")
+            return
+        activity = self.activities[index]
+        try:
+            nchars, filename = stop_activity(activity)
+            msg = "%s chars written to file %s" % (nchars, filename)
+        except (FileNotFoundError, IOError) as e:
+            msg = "Failed to append entry to file. %s: %s" % (type(e), e)
         print(msg)
         sublime.status_message(msg)
 
@@ -200,6 +265,7 @@ class TimetrackerOpenLog(sublime_plugin.WindowCommand):
         #self.window.run_command('open_file', {"file": filename})
         # doesn't work, sublime don't recognize absolute windows paths.
         self.window.open_file(filename)
+
 
 class TimetrackerSelectOpenLog(sublime_plugin.WindowCommand):
     """
@@ -221,5 +287,8 @@ class TimetrackerSelectOpenLog(sublime_plugin.WindowCommand):
         #print(filename)
         #self.window.run_command('open_file', {"file": filename})
         # doesn't work, sublime don't recognize absolute windows paths.
+        if index == -1:
+            print("Quick panel cancelled")
+            return
         filename = self.logs[self.lognames[index]]
         self.window.open_file(filename)
