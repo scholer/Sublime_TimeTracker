@@ -84,15 +84,15 @@ def add_trackcmd(trackcmd, timestamp=None, filename=None):
     line = " ".join([timestamp, trackcmd])
     return append_line(line, filename, add_newline=True)
 
-def start_activity(activity):
+def start_activity(activity, timestamp=None, filename=None):
     """ Shortcut to add a "start <activity>" entry. """
-    trackcmd = "start " + activity.strip()
     recently_started = get_setting("timetracker_recently_started", [])
     recently_started.append(activity.strip())
     persist_setting("timetracker_recently_started", recently_started)
-    return add_trackcmd(trackcmd)
+    trackcmd = "start " + activity.strip()
+    return add_trackcmd(trackcmd, timestamp=timestamp, filename=filename)
 
-def stop_activity(activity):
+def stop_activity(activity, timestamp=None, filename=None):
     """ Shortcut to add a "stop <activity>" entry. """
     if activity == -1:
         recently_started = get_setting("timetracker_recently_started", [])
@@ -101,7 +101,7 @@ def stop_activity(activity):
     recently_stopped.append(activity.strip())
     persist_setting("timetracker_recently_stopped", recently_stopped)
     trackcmd = "stop " + activity.strip()
-    return add_trackcmd(trackcmd)
+    return add_trackcmd(trackcmd, timestamp=timestamp, filename=filename)
 
 
 
@@ -311,10 +311,10 @@ class TimetrackerAddActivityBacklogQuickpanel(TimetrackerStartActivityQuickpanel
         msg = ""
         try:
             if self.starttime:
-                nchars, filename = add_trackcmd(self.activity, timestamp=self.starttime)
+                nchars, filename = start_activity(self.activity, timestamp=self.starttime)
                 msg += "%s chars written to file %s" % (nchars, filename)
             if self.stoptime:
-                nchars, filename = add_trackcmd(activity_no_comment, timestamp=self.stoptime)
+                nchars, filename = stop_activity(activity_no_comment, timestamp=self.stoptime)
                 msg += "\n++ %s chars written to file %s" % (nchars, filename)
         except (FileNotFoundError, IOError) as e:
             msg += "Failed to append entry to file. %s: %s" % (type(e), e)
