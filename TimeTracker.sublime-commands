@@ -8,6 +8,7 @@
     { "caption": "TimeTracker: Stop activity", "command": "timetracker_stop_activity" },
     { "caption": "TimeTracker: Start activity (panel)", "command": "timetracker_start_activity_quickpanel" },
     { "caption": "TimeTracker: Stop activity (panel)", "command": "timetracker_stop_activity_quickpanel" },
+    { "caption": "TimeTracker: Add activity backlog", "command": "timetracker_add_activity_backlog_quickpanel" },
     { "caption": "TimeTracker: Open default log", "command": "timetracker_open_log" },
     { "caption": "TimeTracker: Open log (quick panel)", "command": "timetracker_select_open_log" }
 ]

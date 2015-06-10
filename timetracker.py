@@ -28,7 +28,7 @@ The format is:
 """
 
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 logger = logging.getLogger(__file__)
 
@@ -242,11 +242,82 @@ class TimetrackerStopActivityQuickpanel(TimetrackerStartActivityQuickpanel):
             print("Quick panel cancelled")
             return
         activity = self.activities[index]
+        # No need to prompt for activity comment when stopping an activity
         try:
             nchars, filename = stop_activity(activity)
             msg = "%s chars written to file %s" % (nchars, filename)
         except (FileNotFoundError, IOError) as e:
             msg = "Failed to append entry to file. %s: %s" % (type(e), e)
+        print(msg)
+        sublime.status_message(msg)
+
+
+class TimetrackerAddActivityBacklogQuickpanel(TimetrackerStartActivityQuickpanel):
+    """
+    Set AutoRemote key.
+    Command string: timetracker_add_activity_backlog_quickpanel (WindowCommand)
+    Inherits from TimetrackerStartActivityQuickpanel
+    """
+    def on_selected(self, index):
+        """ Receives input activity (label) as str. """
+        if index == -1:
+            print("Quick panel cancelled")
+            return
+        self.activity = self.activities[index]
+        self.timefmt = get_setting("timetracker_datetimefmt", "%Y-%m-%d %H.%M")
+        # timedelta(days, seconds, microseconds)
+        default_starttime = (datetime.now()-timedelta(0, 60*60)).strftime(self.timefmt)
+        self.window.show_input_panel('Start datetime or minutes:',
+                                     default_starttime,
+                                     self.receive_starttime, None, None)
+
+    def receive_starttime(self, starttime):
+        """ Parse starttime and prompt for stoptime. """
+        if not starttime:
+            print("Empty starttime:", starttime)
+            return
+        try:
+            # Check if start time was in minutes:
+            starttime = int(starttime)
+            self.starttime = (datetime.now()-timedelta(0, starttime*60)).strftime(self.timefmt)
+        except ValueError:
+            # We got a string datetime-stamp:
+            self.starttime = starttime
+        default_stoptime = datetime.now().strftime(self.timefmt)
+        self.window.show_input_panel('Stop datetime or minutes:',
+                                     default_stoptime,
+                                     self.receive_stoptime, None, None)
+
+    def receive_stoptime(self, stoptime):
+        """ Write activity + comment. """
+        if not stoptime:
+            print("Empty starttime:", stoptime, " - will only add start-time backlog")
+            self.stoptime = None
+        else:
+            try:
+                # Check if start time was in minutes:
+                stoptime = int(stoptime)
+                self.stoptime = (datetime.now()-timedelta(0, stoptime*60)).strftime(self.timefmt)
+            except ValueError:
+                # We got a string datetime-stamp:
+                self.stoptime = stoptime
+        self.window.show_input_panel('Comment:', '', self.on_done, None, None)
+
+    def on_done(self, comment):
+        """ Write activity + comment. """
+        activity_no_comment = self.activity
+        if comment:
+            self.activity = self.activity + ", " + comment
+        msg = ""
+        try:
+            if self.starttime:
+                nchars, filename = add_trackcmd(self.activity, timestamp=self.starttime)
+                msg += "%s chars written to file %s" % (nchars, filename)
+            if self.stoptime:
+                nchars, filename = add_trackcmd(activity_no_comment, timestamp=self.stoptime)
+                msg += "\n++ %s chars written to file %s" % (nchars, filename)
+        except (FileNotFoundError, IOError) as e:
+            msg += "Failed to append entry to file. %s: %s" % (type(e), e)
         print(msg)
         sublime.status_message(msg)
 
